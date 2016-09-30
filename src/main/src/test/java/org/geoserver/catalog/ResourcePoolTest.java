@@ -12,6 +12,7 @@ import static org.junit.Assert.*;
 
 import java.awt.image.RenderedImage;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -62,6 +63,7 @@ import org.opengis.feature.Feature;
 import org.opengis.feature.type.FeatureType;
 import org.opengis.style.ExternalGraphic;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 /**
  * Tests for {@link ResourcePool}.
@@ -450,10 +452,18 @@ public class ResourcePoolTest extends GeoServerSystemTestSupport {
         info.setUseConnectionPooling(false);
         try {
             rp.getWebMapServer(info);
+            fail("expected this to fail");
         } catch(IOException e) {
             assertThat(e.getCause(), instanceOf(ServiceException.class));
-            ServiceException cause = (ServiceException) e.getCause();
-            assertThat(cause.getMessage(), containsString("Error while parsing XML"));
+            ServiceException serviceException = (ServiceException) e.getCause();
+            assertThat(serviceException.getMessage(), containsString("Error while parsing XML"));
+            
+            SAXException saxException = (SAXException) serviceException.getCause();
+            Exception cause = saxException.getException();
+            assertFalse("file rather than external entity cause", cause != null && cause instanceof FileNotFoundException); 
+            
+         //   SAXException underlyingCause = (SAXException) cause.;
+         //   assertFalse(underlyingCause.getMessage().contains("java.io.FileNotFoundException") );
         }
         
     }
